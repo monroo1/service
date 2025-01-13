@@ -56,33 +56,5 @@ services:
     depends_on:
       - strapi
 
-  # Сервис для Nginx
-  nginx:
-    container_name: nginx
-    image: nginx:alpine
-    restart: unless-stopped
-    volumes:
-      - ./nginx.conf:/etc/nginx/sites-available/default  # Монтируем ваш файл nginx.conf в контейнер
-      - /etc/letsencrypt:/etc/letsencrypt  # Подключаем директорию с сертификатами
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - nextjs
-      - strapi
-    command: nginx -g 'daemon off;'
-
-  # Сервис для Certbot
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt  # Сохраняем сертификаты в volume
-      - ./nginx.conf:/etc/nginx/sites-available/default  # Монтируем конфигурацию Nginx для certbot
-    environment:
-      - NGINX_HOST=xn--b1afanhwgieieg.online  # Ваш домен
-    entrypoint: "/bin/sh -c 'trap exit TERM; certbot certonly --nginx -d xn--b1afanhwgieieg.online --agree-tos --no-eff-email && while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    depends_on:
-      - nginx
-
 volumes:
   postgres_volume:
