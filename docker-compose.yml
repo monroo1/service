@@ -8,6 +8,9 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
+      APP_KEYS: ${APP_KEYS}
+      API_TOKEN_SALT: ${API_TOKEN_SALT}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
       DATABASE_CLIENT: postgres
       DATABASE_HOST: postgres
       DATABASE_NAME: ${DATABASE_NAME}
