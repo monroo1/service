@@ -59,25 +59,25 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     volumes:
-      - ./config.nginx:/etc/nginx/nginx.conf  # Подключаем конфигурацию Nginx
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Монтируем ваш файл nginx.conf в контейнер
       - /etc/letsencrypt:/etc/letsencrypt  # Подключаем директорию с сертификатами
     ports:
-      - "80:80"  # HTTP порт для Certbot
-      - "443:443"  # HTTPS порт для Nginx
+      - "80:80"
+      - "443:443"
     depends_on:
       - nextjs
       - strapi
-    command: /bin/sh -c "envsubst '$$NGINX_HOST' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    command: nginx -g 'daemon off;'
 
   # Сервис для Certbot
   certbot:
     image: certbot/certbot
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt  # Сохраняем сертификаты в volume
-      - ./config/nginx:/etc/nginx  # Конфигурация Nginx
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Монтируем конфигурацию Nginx для certbot
     environment:
       - NGINX_HOST=xn--b1afanhwgieieg.online  # Ваш домен
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; certbot certonly --nginx -d xn--b1afanhwgieieg.online --agree-tos --no-eff-email && while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     depends_on:
       - nginx
 
