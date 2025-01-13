@@ -45,7 +45,7 @@ services:
   nextjs:
     container_name: nextjs
     build:
-      context: ./path_to_nextjs_project  # Укажите путь к вашему проекту Next.js
+      context: ./project-service  # Укажите путь к вашему проекту Next.js
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
