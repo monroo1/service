@@ -1,0 +1,85 @@
+version: "3"
+services:
+  # Сервис для Strapi
+  strapi:
+    container_name: strapi
+    build:
+      context: ./project-service-backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PORT: 5432
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      NODE_ENV: production
+    volumes:
+      - ./_docker_volumes/public/uploads:/opt/app/public/uploads
+      - ./config:/opt/app/config
+      - ./src:/opt/app/src
+    ports:
+      - "1337:1337"
+    depends_on:
+      - postgres
+
+  # Сервис для PostgreSQL
+  postgres:
+    container_name: postgres
+    platform: linux/amd64
+    env_file: .env
+    image: postgres:14.5-alpine
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # Сервис для Next.js
+  nextjs:
+    container_name: nextjs
+    build:
+      context: ./path_to_nextjs_project  # Укажите путь к вашему проекту Next.js
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - strapi
+
+  # Сервис для Nginx
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./config.nginx:/etc/nginx/nginx.conf  # Подключаем конфигурацию Nginx
+      - /etc/letsencrypt:/etc/letsencrypt  # Подключаем директорию с сертификатами
+    ports:
+      - "80:80"  # HTTP порт для Certbot
+      - "443:443"  # HTTPS порт для Nginx
+    depends_on:
+      - nextjs
+      - strapi
+    command: /bin/sh -c "envsubst '$$NGINX_HOST' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+
+  # Сервис для Certbot
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt  # Сохраняем сертификаты в volume
+      - ./config/nginx:/etc/nginx  # Конфигурация Nginx
+    environment:
+      - NGINX_HOST=xn--b1afanhwgieieg.online  # Ваш домен
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
+
+volumes:
+  postgres_volume:
