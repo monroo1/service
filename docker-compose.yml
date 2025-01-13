@@ -62,7 +62,7 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf  # Монтируем ваш файл nginx.conf в контейнер
+      - ./nginx.conf:/etc/nginx/sites-available/default  # Монтируем ваш файл nginx.conf в контейнер
       - /etc/letsencrypt:/etc/letsencrypt  # Подключаем директорию с сертификатами
     ports:
       - "80:80"
@@ -77,7 +77,7 @@ services:
     image: certbot/certbot
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt  # Сохраняем сертификаты в volume
-      - ./nginx.conf:/etc/nginx/nginx.conf  # Монтируем конфигурацию Nginx для certbot
+      - ./nginx.conf:/etc/nginx/sites-available/default  # Монтируем конфигурацию Nginx для certbot
     environment:
       - NGINX_HOST=xn--b1afanhwgieieg.online  # Ваш домен
     entrypoint: "/bin/sh -c 'trap exit TERM; certbot certonly --nginx -d xn--b1afanhwgieieg.online --agree-tos --no-eff-email && while :; do certbot renew; sleep 12h & wait $${!}; done;'"
