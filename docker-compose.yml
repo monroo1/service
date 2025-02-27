@@ -27,13 +27,13 @@ services:
     ports:
       - "1337:1337"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   # Сервис для PostgreSQL
   postgres:
     container_name: postgres
     platform: linux/amd64
-    env_file: .env
     image: postgres:14.5-alpine
     environment:
       POSTGRES_USER: ${DATABASE_USERNAME}
@@ -41,14 +41,17 @@ services:
       POSTGRES_DB: ${DATABASE_NAME}
     volumes:
       - postgres_volume:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Сервис для Next.js
   nextjs:
     container_name: nextjs
     build:
-      context: ./project-service  # Укажите путь к вашему проекту Next.js
+      context: ./project-service
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
